@@ -1,26 +1,34 @@
 <template>
   <form class="form" @submit.prevent="onSubmit">
-    <h1 class="">Заполните форму</h1>
+    <h1>Заполните форму</h1>
     <div class="form__input">
-      <label class="">Имя:</label>
+      <label>Имя:</label>
       <input type="text" v-model="firstName" />
     </div>
-    <div v-if="v$.firstName.$invalid">Name field has an error.</div>
+    <span class="form__error" :class="{ form__error_active: v$.firstName.onlyAlpha.$invalid }"
+      >Допустимы только буквы</span
+    >
 
     <div class="form__input">
-      <label class="">Фамилия:</label>
+      <label>Фамилия: </label>
       <input type="text" v-model="lastName" />
     </div>
+    <span class="form__error" :class="{ form__error_active: v$.lastName.onlyAlpha.$invalid }"
+      >Допустимы только буквы</span
+    >
 
     <div class="form__input">
-      <label class="">Email:</label>
+      <label>Email<span style="color: red">*</span>:</label>
       <input type="text" v-model="email" />
     </div>
-    <div v-if="v$.email.$error">Name field has an error.</div>
+    <span class="form__error" :class="{ form__error_active: v$.email.email.$invalid }"
+      >Введите корректный email</span
+    >
 
     <div class="form__input">
-      <label>Категория:</label>
+      <label>Категория<span style="color: red">*</span>:</label>
       <select v-model="category">
+        <option value="" selected>--Выберите категорию--</option>
         <option value="request">Обращение</option>
         <option value="employment">Трудоустройство</option>
         <option value="feedback">Отзыв</option>
@@ -29,11 +37,30 @@
 
     <div class="form__input">
       <label>Ключевые слова:</label>
-      <input type="text" id="keyWords" v-model="tempKeyWords" @keyup="addKeyWord" />
+      <input
+        type="text"
+        id="keyWords"
+        v-model="tempKeyWords"
+        @focus="onFocus"
+        v-text="textEl"
+        @keyup="addKeyWord"
+      />
     </div>
-    <label for="keyWords" class="form__advice-label">
+    <span
+      class="form__error"
+      :class="{ form__error_active: v$.tempKeyWords.alphaPlusComma.$invalid }"
+      v-if="!v$.tempKeyWords.maxLengthValue.$invalid"
+      >Допустимы только буквы</span
+    >
+    <span
+      class="form__error"
+      :class="{ form__error_active: v$.tempKeyWords.maxLengthValue.$invalid }"
+      v-else-if="v$.tempKeyWords.maxLengthValue.$invalid"
+      >Максимум 15 символов</span
+    >
+    <span for="keyWords" class="form__advice-label" v-if="isFocused">
       Введите сюда ключевые слова через запятую, это поможет быстрее отработать ваш запрос
-    </label>
+    </span>
     <div class="form__skills">
       <label v-for="(word, index) in keyWords" :key="word" @click="onDeleteSkill(index)">{{
         word
@@ -41,9 +68,12 @@
     </div>
 
     <div class="form__textarea">
-      <label>Содержание:</label>
-      <textarea></textarea>
+      <label>Содержание<span style="color: red">*</span>:</label>
+      <textarea v-model="textArea"></textarea>
     </div>
+    <span class="form__error" :class="{ form__error_active: v$.textArea.maxLengthValue.$invalid }"
+      >Максимум 8500 символов</span
+    >
 
     <div
       class="form__dropzone"
@@ -72,16 +102,33 @@
 
     <div class="form__checkbox">
       <input type="checkbox" id="terms" v-model="terms" />
-      <label for="terms">Соглашаюсь с обработкой персональных данных</label>
+      <label for="terms"
+        >Соглашаюсь с обработкой персональных данных<span style="color: red">*</span></label
+      >
     </div>
 
-    <button type="submit" class="form__submit-button">Отправить</button>
+    <button
+      type="submit"
+      class="form__submit-button"
+      :disabled="
+        (!this.firstName && !this.lastName) ||
+        !this.category ||
+        !this.textArea ||
+        !this.terms ||
+        v$.$invalid
+      "
+    >
+      Отправить
+    </button>
   </form>
 </template>
 
 <script>
 import { useVuelidate } from '@vuelidate/core';
-import { required, email, minLength } from '@vuelidate/validators';
+import { email, helpers, maxLength, required } from '@vuelidate/validators';
+
+const onlyAlpha = helpers.regex(/^[A-Za-zА-Яа-я ё -]+$/);
+const alphaPlusComma = helpers.regex(/^[A-Za-zА-Яа-я ё , -]+$/);
 
 export default {
   setup() {
@@ -91,11 +138,13 @@ export default {
     return {
       firstName: '',
       lastName: '',
-      email: '',
-      category: 'request',
-      terms: 'false',
+      email: '111@111.ru',
+      category: '',
+      terms: '',
       tempKeyWords: '',
+      isFocused: false,
       keyWords: ['vvv', 'еще чет'],
+      textArea: '',
       dropFiles: [
         { name: '2M6A5273.JPG', lastModified: 1679469630000, size: 5019239 },
         { name: '2M6A5273.JPG', lastModified: 1679469630000, size: 5019239 },
@@ -104,8 +153,19 @@ export default {
     };
   },
   methods: {
+    onFocus() {
+      this.isFocused = true;
+      setTimeout(() => {
+        this.isFocused = false;
+      }, [5000]);
+    },
     addKeyWord(e) {
-      if (e.key === ',' && this.tempKeyWords.length > 0) {
+      if (
+        e.key === ',' &&
+        this.tempKeyWords.length !== 1 &&
+        !this.v$.tempKeyWords.alphaPlusComma.$invalid &&
+        !this.v$.tempKeyWords.maxLengthValue.$invalid
+      ) {
         if (!this.keyWords.includes(this.tempKeyWords.substring(0, this.tempKeyWords.length - 1))) {
           this.keyWords.push(this.tempKeyWords.substring(0, this.tempKeyWords.length - 1));
         }
@@ -153,11 +213,16 @@ export default {
       console.log(this.firstName);
     },
   },
+  computed: {
+    textEl() {},
+  },
   validations() {
     return {
-      firstName: { required, minLength: 5 },
-      lastName: { required },
-      email: { required, email }, // Matches this.contact.email
+      firstName: { onlyAlpha },
+      lastName: { onlyAlpha },
+      email: { email, required },
+      tempKeyWords: { alphaPlusComma, maxLengthValue: maxLength(15) },
+      textArea: { maxLengthValue: maxLength(8500), required },
     };
   },
 };
@@ -194,7 +259,7 @@ export default {
     input {
       width: 70%;
       margin-left: 5px;
-      margin-bottom: 15px;
+      margin-bottom: 3px;
       padding: 0 0 3px;
       border: none;
       border-bottom: 1px solid rgba(0, 0, 0, 0.363);
@@ -205,13 +270,20 @@ export default {
     }
 
     select {
+      width: 70%;
+      text-align: center;
       margin-bottom: 15px;
+      background-color: transparent;
+      border: none;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.363);
+      cursor: pointer;
     }
   }
 
   &__skills {
     width: 70%;
     margin-bottom: 10px;
+    padding-top: 4px;
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
@@ -227,29 +299,25 @@ export default {
   }
 
   &__advice-label {
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     margin-top: -17px;
     width: 70%;
     text-align: center;
-    visibility: hidden;
     transition: ease-in-out 0.5s;
   }
 
   &__textarea {
     width: 70%;
-    margin-bottom: 10px;
     display: flex;
     flex-direction: column;
 
     label {
-      margin-bottom: 5px;
       font-size: 1.1rem;
     }
 
     textarea {
       max-width: 100%;
       border: 1px solid rgba(0, 0, 0, 0.363);
-      margin-bottom: 10px;
       border-radius: 4px;
       padding: 4px;
       outline: none;
@@ -364,16 +432,82 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 40px;
 
     label {
       margin-left: 5px;
-      font-size: 0.9rem;
+      font-size: 1rem;
       cursor: pointer;
     }
 
     input {
       cursor: pointer;
+
+      &:checked {
+        accent-color: #3fa67c;
+      }
+    }
+  }
+
+  &__submit-button {
+    padding: 1.3em 3em;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    font-weight: 500;
+    color: #000;
+    background-color: #fff;
+    border: none;
+    border-radius: 45px;
+    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease 0s;
+    cursor: pointer;
+    outline: none;
+
+    &:hover {
+      background-color: #23c483;
+      box-shadow: 0px 15px 20px rgba(46, 229, 157, 0.4);
+      color: #fff;
+      transform: translateY(-4px);
+    }
+
+    &:active {
+      transform: translateY(-1px);
+    }
+
+    &:disabled {
+      cursor: auto;
+      pointer-events: none;
+      opacity: 0.5;
+
+      &:active {
+        transform: none;
+      }
+
+      &:hover {
+        color: #000;
+        background-color: #fff;
+        box-shadow: none;
+        transform: none;
+      }
+    }
+  }
+
+  &__error {
+    visibility: hidden;
+    opacity: 0;
+    font-size: 0.8rem;
+    color: red;
+    transition: ease-in-out 0.2s;
+    margin-bottom: 1px;
+
+    &:last-of-type {
+      margin-bottom: 20px;
+    }
+
+    &_active {
+      visibility: visible;
+      opacity: 1;
     }
   }
 }
