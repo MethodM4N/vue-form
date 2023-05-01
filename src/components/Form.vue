@@ -47,20 +47,25 @@
       />
     </div>
     <span
+      for="keyWords"
+      class="form__advice"
+      :class="{ form__advice_active: isFocused }"
+      v-if="isFocused"
+    >
+      Введите сюда ключевые слова через запятую, это поможет быстрее отработать ваш запрос
+    </span>
+    <span
       class="form__error"
       :class="{ form__error_active: v$.tempKeyWords.alphaPlusComma.$invalid }"
-      v-if="!v$.tempKeyWords.maxLengthValue.$invalid"
+      v-else-if="!v$.tempKeyWords.maxLengthValue.$invalid && !isFocused"
       >Допустимы только буквы</span
     >
     <span
       class="form__error"
       :class="{ form__error_active: v$.tempKeyWords.maxLengthValue.$invalid }"
-      v-else-if="v$.tempKeyWords.maxLengthValue.$invalid"
+      v-else-if="v$.tempKeyWords.maxLengthValue.$invalid && !isFocused"
       >Максимум 15 символов</span
     >
-    <span for="keyWords" class="form__advice-label" v-if="isFocused">
-      Введите сюда ключевые слова через запятую, это поможет быстрее отработать ваш запрос
-    </span>
     <div class="form__skills">
       <label v-for="(word, index) in keyWords" :key="word" @click="onDeleteSkill(index)">{{
         word
@@ -138,21 +143,45 @@ export default {
     return {
       firstName: '',
       lastName: '',
-      email: '111@111.ru',
+      email: '',
       category: '',
       terms: '',
       tempKeyWords: '',
       isFocused: false,
-      keyWords: ['vvv', 'еще чет'],
+      keyWords: [],
       textArea: '',
-      dropFiles: [
-        { name: '2M6A5273.JPG', lastModified: 1679469630000, size: 5019239 },
-        { name: '2M6A5273.JPG', lastModified: 1679469630000, size: 5019239 },
-      ],
+      dropFiles: [],
       activeZone: false,
     };
   },
   methods: {
+    onSubmit() {
+      const formData = new FormData();
+      if (this.dropFiles.length !== 0) {
+        this.dropFiles.forEach((image) => formData.append('file', image));
+      }
+
+      let fullName = null;
+      if (this.firstName) {
+        fullName = this.firstName;
+        if (this.lastName) {
+          fullName = fullName + ' ' + this.lastName;
+        }
+      } else {
+        fullName = this.lastName;
+      }
+
+      const json = JSON.stringify({
+        fullName,
+        email: this.email,
+        category: this.category,
+        keyWords: this.keyWords,
+        contents: this.textArea,
+      });
+      console.log(json, formData);
+
+      // можно обнулить все модели после сабмита (для удобства проверки оставлю так)
+    },
     onFocus() {
       this.isFocused = true;
       setTimeout(() => {
@@ -192,25 +221,19 @@ export default {
           return;
         } else {
           this.dropFiles.push(e.target.files[0]);
-          console.log(e.target.files[0]);
         }
       } else if (e.dataTransfer.files) {
         if (validation(e.dataTransfer.files[0])) {
           this.activeZone = !this.activeZone;
           return;
         } else {
-          console.log(e.dataTransfer.files);
           this.dropFiles.push(e.dataTransfer.files[0]);
           this.activeZone = !this.activeZone;
         }
       }
-      console.log(this.dropFiles);
     },
     onDeleteFile(index) {
       this.dropFiles.splice(index, 1);
-    },
-    onSubmit() {
-      console.log(this.firstName);
     },
   },
   computed: {
@@ -238,6 +261,14 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
+
+  @media (max-width: 1060px) {
+    width: 65%;
+  }
+
+  @media (max-width: 730px) {
+    width: 80%;
+  }
 
   h1 {
     margin: 0 0 40px;
@@ -298,12 +329,19 @@ export default {
     }
   }
 
-  &__advice-label {
+  &__advice {
+    visibility: hidden;
+    opacity: 0;
     font-size: 0.8rem;
-    margin-top: -17px;
+    margin-bottom: 1px;
     width: 70%;
     text-align: center;
     transition: ease-in-out 0.5s;
+
+    &_active {
+      visibility: visible;
+      opacity: 1;
+    }
   }
 
   &__textarea {
@@ -334,7 +372,7 @@ export default {
   }
 
   &__dropzone {
-    width: 40%;
+    width: 50%;
     height: 140px;
     margin-bottom: 20px;
     padding: 10px;
@@ -346,6 +384,20 @@ export default {
     border: 2px dashed #41b883;
     background-color: #fff;
     transition: 0.3s ease all;
+
+    @media (max-width: 730px) {
+      border: none;
+      height: 60px;
+      width: 80%;
+
+      span {
+        display: none;
+
+        &:last-child {
+          display: block;
+        }
+      }
+    }
 
     span {
       text-align: center;
@@ -508,6 +560,12 @@ export default {
     &_active {
       visibility: visible;
       opacity: 1;
+    }
+
+    @media (max-width: 1060px) {
+      &:last-of-type {
+        margin-bottom: 5px;
+      }
     }
   }
 }
