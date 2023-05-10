@@ -2,7 +2,7 @@
 
 ## Ссылка на Github Pages
 
-В процессе
+https://methodm4n.github.io/vue-form/
 
 ## Функциональные особенности
 
