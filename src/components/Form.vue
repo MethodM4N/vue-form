@@ -43,7 +43,7 @@
         v-model="tempKeyWords"
         @focus="onFocus"
         v-text="textEl"
-        @keyup="addKeyWord"
+        @keyup.,="addKeyWord"
       />
     </div>
     <span
@@ -190,7 +190,6 @@ export default {
     },
     addKeyWord(e) {
       if (
-        e.key === ',' &&
         this.tempKeyWords.length !== 1 &&
         !this.v$.tempKeyWords.alphaPlusComma.$invalid &&
         !this.v$.tempKeyWords.maxLengthValue.$invalid
