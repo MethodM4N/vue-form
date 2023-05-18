@@ -29,9 +29,9 @@
       <label>Категория<span style="color: red">*</span>:</label>
       <select v-model="category">
         <option value="" selected>--Выберите категорию--</option>
-        <option value="request">Обращение</option>
-        <option value="employment">Трудоустройство</option>
-        <option value="feedback">Отзыв</option>
+        <option value="Обращение">Обращение</option>
+        <option value="Трудоустройство">Трудоустройство</option>
+        <option value="Отзыв">Отзыв</option>
       </select>
     </div>
 
@@ -43,7 +43,6 @@
         v-model="tempKeyWords"
         @focus="onFocus"
         v-text="textEl"
-        @keyup.,="addKeyWord"
       />
     </div>
     <span
@@ -52,11 +51,11 @@
       :class="{ form__advice_active: isFocused }"
       v-if="isFocused"
     >
-      Введите сюда ключевые слова через запятую, это поможет быстрее отработать ваш запрос
+      Введите сюда ключевые слова через пробел, это поможет быстрее отработать ваш запрос
     </span>
     <span
       class="form__error"
-      :class="{ form__error_active: v$.tempKeyWords.alphaPlusComma.$invalid }"
+      :class="{ form__error_active: v$.tempKeyWords.onlyAlpha.$invalid }"
       v-else-if="!v$.tempKeyWords.maxLengthValue.$invalid && !isFocused"
       >Допустимы только буквы</span
     >
@@ -133,7 +132,6 @@ import { useVuelidate } from '@vuelidate/core';
 import { email, helpers, maxLength, required } from '@vuelidate/validators';
 
 const onlyAlpha = helpers.regex(/^[A-Za-zА-Яа-я ё -]+$/);
-const alphaPlusComma = helpers.regex(/^[A-Za-zА-Яа-я ё , -]+$/);
 
 export default {
   setup() {
@@ -154,6 +152,17 @@ export default {
       activeZone: false,
     };
   },
+  watch: {
+    category(value) {
+      this.keyWords.push(value)
+    },
+    tempKeyWords(value) {
+      if (/\s/g.test(value)) {
+        this.addKeyWord();
+      }
+    }
+  },
+
   methods: {
     onSubmit() {
       const formData = new FormData();
@@ -188,10 +197,10 @@ export default {
         this.isFocused = false;
       }, [5000]);
     },
-    addKeyWord(e) {
+    addKeyWord() {
       if (
-        this.tempKeyWords.length !== 1 &&
-        !this.v$.tempKeyWords.alphaPlusComma.$invalid &&
+        this.tempKeyWords &&
+        !this.v$.tempKeyWords.onlyAlpha.$invalid &&
         !this.v$.tempKeyWords.maxLengthValue.$invalid
       ) {
         if (!this.keyWords.includes(this.tempKeyWords.substring(0, this.tempKeyWords.length - 1))) {
@@ -243,7 +252,7 @@ export default {
       firstName: { onlyAlpha },
       lastName: { onlyAlpha },
       email: { email, required },
-      tempKeyWords: { alphaPlusComma, maxLengthValue: maxLength(15) },
+      tempKeyWords: { onlyAlpha, maxLengthValue: maxLength(15) },
       textArea: { maxLengthValue: maxLength(8500), required },
     };
   },
