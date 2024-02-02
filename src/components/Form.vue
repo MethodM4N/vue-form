@@ -14,8 +14,8 @@
       <input type="text" v-model="lastName" />
     </div>
     <span class="form__error" :class="{ form__error_active: v$.lastName.onlyAlpha.$invalid }"
-      >Допустимы только буквы</span
-    >
+      >Допустимы только буквы
+    </span>
 
     <div class="form__input">
       <label>Email<span style="color: red">*</span>:</label>
@@ -37,20 +37,13 @@
 
     <div class="form__input">
       <label>Ключевые слова:</label>
-      <input
-        type="text"
-        id="keyWords"
-        v-model="tempKeyWords"
-        @focus="onFocus"
-        v-text="textEl"
-      />
+      <input type="text" id="keyWords" v-model="tempKeyWords" @focus="onFocus" v-text="textEl" />
     </div>
     <span
       for="keyWords"
       class="form__advice"
       :class="{ form__advice_active: isFocused }"
-      v-if="isFocused"
-    >
+      v-if="isFocused">
       Введите сюда ключевые слова через пробел, это поможет быстрее отработать ваш запрос
     </span>
     <span
@@ -85,8 +78,7 @@
       @dragleave.prevent="toggleActiveZone"
       @dragover.prevent
       @drop.prevent="onDrop"
-      :class="{ form__dropzone_active: activeZone }"
-    >
+      :class="{ form__dropzone_active: activeZone }">
       <span>Перенесите сюда файл для загрузки</span>
       <span>или воспользуйтесь кнопкой</span>
       <label for="dropzone">Загрузить</label>
@@ -120,8 +112,7 @@
         !this.textArea ||
         !this.terms ||
         v$.$invalid
-      "
-    >
+      ">
       Отправить
     </button>
   </form>
@@ -149,12 +140,12 @@ export default {
       keyWords: [],
       textArea: '',
       dropFiles: [],
-      activeZone: false,
+      activeZone: false
     };
   },
   watch: {
     category(value) {
-      this.keyWords.push(value)
+      this.keyWords.push(value);
     },
     tempKeyWords(value) {
       if (/\s/g.test(value)) {
@@ -185,7 +176,7 @@ export default {
         email: this.email,
         category: this.category,
         keyWords: this.keyWords,
-        contents: this.textArea,
+        contents: this.textArea
       });
       console.log(json, formData);
 
@@ -242,10 +233,10 @@ export default {
     },
     onDeleteFile(index) {
       this.dropFiles.splice(index, 1);
-    },
+    }
   },
   computed: {
-    textEl() {},
+    textEl() {}
   },
   validations() {
     return {
@@ -253,9 +244,9 @@ export default {
       lastName: { onlyAlpha },
       email: { email, required },
       tempKeyWords: { onlyAlpha, maxLengthValue: maxLength(15) },
-      textArea: { maxLengthValue: maxLength(8500), required },
+      textArea: { maxLengthValue: maxLength(8500), required }
     };
-  },
+  }
 };
 </script>
 
